@@ -1,22 +1,30 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:camera/camera.dart';
 import 'package:flutter_camera_example/display.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+late List<CameraDescription> cameras;
 
 Future<void> main() async {
-  final cameras = await availableCameras();
-
-  final firstCamera = cameras.first;
-
+  try {
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    print('Error in fetching the cameras: $e');
+  }
+  CameraDescription appCamera;
+  // Index 0 of cameras list — back camera
+  // Index 1 of cameras list — front camera
+  if (cameras.asMap().containsKey(1)) {
+    appCamera = cameras[1]; 
+  } else {
+    appCamera = cameras[0];
+  }
   runApp(
     MaterialApp(
       theme: ThemeData(primarySwatch: Colors.pink),
       home: Camera(
-        camera: firstCamera,
+        camera: appCamera,
       ),
     ),
   );
@@ -55,11 +63,11 @@ class CameraState extends State<Camera> {
     super.dispose();
   }
 
-Future<Uint8List?> cameraGetPicture() async {
-  XFile? file = await _controller.takePicture();
+  Future<Uint8List?> cameraGetPicture() async {
+    XFile? file = await _controller.takePicture();
 
-  return await file.readAsBytes(); // convert into Uint8List.
-}
+    return await file.readAsBytes(); // convert into Uint8List.
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,14 +92,12 @@ Future<Uint8List?> cameraGetPicture() async {
             if (image != null) {
               final path = image;
               Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DisplayPicture(imagePath: path),
-              ),
-            );
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DisplayPicture(imagePath: path),
+                ),
+              );
             } 
-
-            
           } catch (e) {
             print(e);
           }
